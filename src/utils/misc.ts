@@ -1,14 +1,18 @@
 import { Fyo } from 'fyo';
 import { ConfigFile } from 'fyo/core/types';
+import { translateSchema } from 'fyo/utils/translation';
+import { cloneDeep } from 'lodash';
 import { DateTime } from 'luxon';
 import { SetupWizard } from 'models/baseModels/SetupWizard/SetupWizard';
 import { ModelNameEnum } from 'models/types';
+import { reports } from 'reports/index';
 import SetupWizardSchema from 'schemas/app/SetupWizard.json';
 import { Schema } from 'schemas/types';
 import { fyo } from 'src/initFyo';
 import { QueryFilter } from 'utils/db/types';
+import { schemaTranslateables } from 'utils/translationHelpers';
+import type { LanguageMap } from 'utils/types';
 import { PeriodKey } from './types';
-import { reports } from 'reports/index';
 
 export function getDatesAndPeriodList(period: PeriodKey): {
   periodList: DateTime[];
@@ -21,7 +25,7 @@ export function getDatesAndPeriodList(period: PeriodKey): {
   if (period === 'This Year') {
     fromDate = toDate.minus({ months: 12 });
   } else if (period === 'YTD') {
-    fromDate = DateTime.now().startOf('Year');
+    fromDate = DateTime.now().startOf('year');
   } else if (period === 'This Quarter') {
     fromDate = toDate.minus({ months: 3 });
   } else if (period === 'This Month') {
@@ -37,7 +41,7 @@ export function getDatesAndPeriodList(period: PeriodKey): {
   while (true) {
     const nextDate = periodList.at(0)!.minus({ months: 1 });
     if (nextDate.toMillis() < fromDate.toMillis()) {
-      if (period === 'YTD'){
+      if (period === 'YTD') {
         periodList.unshift(nextDate);
         break;
       }
@@ -55,16 +59,20 @@ export function getDatesAndPeriodList(period: PeriodKey): {
   };
 }
 
-export function getSetupWizardDoc() {
+export function getSetupWizardDoc(languageMap?: LanguageMap) {
   /**
    * This is used cause when setup wizard is running
    * the database isn't yet initialized.
    */
+  const schema = cloneDeep(SetupWizardSchema);
+  if (languageMap) {
+    translateSchema(schema, languageMap, schemaTranslateables);
+  }
   return fyo.doc.getNewDoc(
     'SetupWizard',
     {},
     false,
-    SetupWizardSchema as Schema,
+    schema as Schema,
     SetupWizard
   );
 }
