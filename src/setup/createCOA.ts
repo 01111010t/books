@@ -87,7 +87,7 @@ async function getCOA(chartOfAccounts: string): Promise<COATree> {
   const coaList = getCOAList();
   const coa = coaList.find(({ name }) => name === chartOfAccounts);
 
-  const conCode = coa?.countryCode;
+  const conCode = coa?.fileCode ?? coa?.countryCode;
   if (!conCode) {
     return getStandardCOA();
   }
